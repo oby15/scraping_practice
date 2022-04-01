@@ -22,6 +22,8 @@ class ProductSpider(scrapy.Spider):
 
         # See https://docs.scrapy.org/en/latest/intro/tutorial.html for multiple shorter, more 
         # efficient definitions
-        #next_page = response.css('li.next a::attr(href)').get()
-        #if next_page is not None:
-        #    yield response.follow(next_page, callback=self.parse)   
+        # XX For CSS selector class names with spaces, replace with dot notation to get to work!
+        temp = response.css('li a')
+        next_page = temp.css('a.btn.btn--tertiary.btn--narrow::attr(href)').get()
+        if next_page is not None:
+            yield response.follow(next_page, callback=self.parse)
