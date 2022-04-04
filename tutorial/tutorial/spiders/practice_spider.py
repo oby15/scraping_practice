@@ -30,7 +30,10 @@ class ProductSpider(scrapy.Spider):
             yield response.follow(next_page_rel, callback=self.parse)
 
 
-# Working version scrapy.Request to spider consecutive pages - building absolute url 
+# Partially working version scrapy.Request to spider consecutive pages - building absolute url,
+# however, doesn't follow all consecutive page links, as fails to differentiate between next and
+# proceeding page links (as have same css selector) once it lands on page 2, so goes back to pg 1 again
+# and finishes. 
 class ProductSpider2(scrapy.Spider):
     
     name = "product2"
@@ -53,7 +56,7 @@ class ProductSpider2(scrapy.Spider):
             yield scrapy.Request(next_page, callback=self.parse)
 
 
-# Version to crawl all product pages
+# Version to crawl all product pages using xpath selector to isole finding next page link
 class ProductSpider3(scrapy.Spider):
     
     name = "product3"
@@ -69,7 +72,9 @@ class ProductSpider3(scrapy.Spider):
             yield {
                 'price': product.css('span::text').getall(),
             }
-        temp = response.css('a.btn.btn--tertiary.btn--narrow::attr(href)').get()
+        # Finds unique text in child element and then uses .. notation to select parent element,
+        # and then selecting the href of that element
+        temp = response.xpath('//span[contains(text(), "Next page")]/../@href').get()
         next_page_rel = temp[temp.index("?"):]
         if next_page_rel is not None:
             next_page = response.urljoin(next_page_rel)
