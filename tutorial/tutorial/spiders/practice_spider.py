@@ -30,7 +30,7 @@ class ProductSpider(scrapy.Spider):
             yield response.follow(next_page_rel, callback=self.parse)
 
 
-# Partially working version scrapy.Request to spider consecutive pages - building absolute url,
+# Partially working version using scrapy.Request to spider consecutive pages - building absolute url,
 # however, doesn't follow all consecutive page links, as fails to differentiate between next and
 # proceeding page links (as have same css selector) once it lands on page 2, so goes back to pg 1 again
 # and finishes. 
@@ -71,6 +71,29 @@ class ProductSpider3(scrapy.Spider):
         for product in prices:
             yield {
                 'price': product.css('span::text').getall(),
+            }
+        # Finds unique text in child element and then uses .. notation to select parent element,
+        # and then selecting the href of that element
+        temp = response.xpath('//span[contains(text(), "Next page")]/../@href').get()
+        next_page_rel = temp[temp.index("?"):]
+        if next_page_rel is not None:
+            next_page = response.urljoin(next_page_rel)
+            yield scrapy.Request(next_page, callback=self.parse)
+
+# Version to get product title and price for all products on site.
+class ProductSpider4(scrapy.Spider):
+    
+    name = "product4"
+    start_urls = [
+        'https://rethread.uk/collections/new-arrivals',
+    ]
+
+    def parse(self, response):
+        products = response.css('div.grid-view-item.product-card')
+        for product in products:
+            yield {
+                'title': product.css('div.h4.grid-view-item__title.product-card__title::text').getall(),
+                'price': product.css('span.price-item.price-item--regular::text').getall(),
             }
         # Finds unique text in child element and then uses .. notation to select parent element,
         # and then selecting the href of that element
